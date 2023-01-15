@@ -1,5 +1,5 @@
 // Javelin.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+// Code edited slightly
 
 #include <iostream>
 #include <cstdio>
@@ -13,6 +13,8 @@
 #include <psapi.h>
 
 #include "Libraries/termcolor/termcolor.hpp"
+
+using namespace std;
 
 typedef NTSTATUS (NTAPI* _NtQueryInformationProcess)(
 	HANDLE ProcessHandle,
@@ -68,9 +70,14 @@ int getmodules(DWORD processID)
 
 int main()
 {
-	std::cout << "[" << termcolor::green << "*" << termcolor::white << "] Loading cannons..." << std::endl;
+	cout << termcolor::underline << "Javelin (by Azurilex aka rate) edited by tommy" << endl;
+	
+	// process detection
+
+	cout << "[" << termcolor::green << "*" << termcolor::white << "] Loading cannons..." << endl;
 
 	int detections = 0;
+
 	bool syncheck = false;
 
 	PROCESSENTRY32 entry;
@@ -97,23 +104,23 @@ int main()
 					QueryFullProcessImageName(h_process, 0, buffer, &value);
 					CloseHandle(h_process);
 
-					std::string libPath = buffer;
+					string libPath = buffer;
+
 					if (!libPath.empty())
 					{
 						libPath.resize(libPath.size() - 30);
 					}
 					else
 					{
-						std::cout << "[" << termcolor::yellow << "*" << termcolor::white << "] A Synapse library was detected, but an error occurred when attempting to confirm the detection." << std::endl;
+						cout << "[" << termcolor::yellow << "*" << termcolor::white << "] A Synapse library was detected, but an error occurred when attempting to confirm the detection." << endl;
 					}
-
-					if (std::filesystem::exists(libPath + "SynapseInjector.dll"))
+					if (filesystem::exists(libPath + "SynapseInjector.dll"))
 					{
-						std::cout << "[" << termcolor::red << "*" << termcolor::white << "] Synapse has been detected to be running at " << libPath << std::endl;
+						cout << "[" << termcolor::red << "*" << termcolor::white << "] Synapse has been detected to be running at " << libPath << endl;
 					}
 					else
 					{
-						std::cout << "[" << termcolor::red << "*" << termcolor::white << "] A Synapse library. However, Javelin could not confirm if it was Synapse. Look for more info at " << libPath << std::endl;
+						cout << "[" << termcolor::red << "*" << termcolor::white << "] A Synapse library. However, Javelin could not confirm if it was Synapse. Look for more info at " << libPath << endl;
 					}
 					detections++;
 					syncheck = true;
@@ -126,10 +133,10 @@ int main()
 				auto* h_process = OpenProcess(PROCESS_QUERY_INFORMATION, false, entry.th32ProcessID);
 				QueryFullProcessImageName(h_process, 0, buffer, &value);
 				CloseHandle(h_process);
-				std::cout << "[" << termcolor::yellow << "*" << termcolor::white << "] rbxfpsunlocker has been detected to be running at " << buffer << std::endl;
+				cout << "[" << termcolor::yellow << "*" << termcolor::white << "] rbxfpsunlocker has been detected to be running at " << buffer << endl;
 				detections++;
 			}
-			else if (strcmp(entry.szExeFile, "AutoHotkey.exe") == 0)
+			else if (strcmp(entry.szExeFile, "AutoHotkey.exe") == 0 || strcmp(entry.szExeFile, "AutoHotkeyUX.exe") == 0)
 			{
 				DWORD value = MAX_PATH;
 				char buffer[MAX_PATH];
@@ -161,8 +168,8 @@ int main()
 					return GetLastError();
 				}
 				CloseHandle(h_process);
-				std::cout << "[" << termcolor::yellow << "*" << termcolor::white << "] AutoHotkey has been detected to be running at " << buffer << std::endl;
-				std::cout << "[" << termcolor::yellow << "*" << termcolor::white << "] AutoHotkey Arguments: " << printf("%.*S", cmdline.Length / 2, commandLineContents) << std::endl;
+				cout << "[" << termcolor::yellow << "*" << termcolor::white << "] AutoHotkey has been detected to be running at " << buffer << endl;
+				cout << "[" << termcolor::yellow << "*" << termcolor::white << "] AutoHotkey Arguments: " << printf("%.*S", cmdline.Length / 2, commandLineContents) << endl;
 				free(commandLineContents);
 				detections++;
 			}
@@ -171,20 +178,45 @@ int main()
 
 	CloseHandle(snapshot);
 
-	std::cout << std::endl;
+	// driver detection?
+
+	LPVOID drivers[1024];
+	DWORD cbn;
+	int cDrivers, i;
+
+	if (EnumDeviceDrivers(drivers, sizeof(drivers), &cbn) && cbn < sizeof(drivers)) {
+		TCHAR szDriver[1024];
+		cDrivers = cbn / sizeof(drivers[0]);
+
+		cout << "\nFound " << termcolor::yellow << cDrivers << termcolor::white << " drivers loaded" << endl;
+
+		for (i = 0; i < cDrivers; i++) {
+			if (GetDeviceDriverBaseName(drivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0]))) {
+				if (strcmp(szDriver, "rawaccel.sys") == 0) {
+					cout << "[" << termcolor::red << "*" << termcolor::white << "] RawAccel driver found to be loaded on system" << endl;
+					detections++;
+				}
+			}
+		}
+	} else {
+		_tprintf(TEXT("Could not EnumDeviceDrivers; array size needed is %d\n"), cbn / sizeof(LPVOID));
+		return GetLastError();
+	}
+	
+	cout << endl;
 	if (detections == 0)
 	{
-		std::cout << "[" << termcolor::green << "*" << termcolor::white << "] There were 0 total detections. Nice job, Javelin thinks you're legit!" << std::endl;
+		cout << "[" << termcolor::green << "*" << termcolor::white << "] There were 0 total detections. Nice job, Javelin thinks you're legit!" << endl;
 	}
 	else
 	{
-		std::cout << "[" << termcolor::red << "*" << termcolor::white << "] There were " << detections << " total detections." << std::endl;
+		cout << "[" << termcolor::red << "*" << termcolor::white << "] There were " << detections << " total detections." << endl;
 	}
 
-	std::cout << std::endl;
+	cout << endl;
 
 	if (RPID) {
-		std::cout << "[" << termcolor::green << "*" << termcolor::white << "] Here are all the modules currently hooked to RobloxPlayerBeta.exe" << std::endl;
+		cout << "[" << termcolor::green << "*" << termcolor::white << "] Here are all the modules currently hooked to RobloxPlayerBeta.exe" << endl;
 		getmodules(RPID);
 	}
 
