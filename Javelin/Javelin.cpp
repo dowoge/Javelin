@@ -187,8 +187,6 @@ int main()
 		std::cout << "[" << termcolor::green << "*" << termcolor::white << "] Here are all the modules currently hooked to RobloxPlayerBeta.exe" << std::endl;
 		getmodules(RPID);
 	}
-	
-	std::cout << "AZURILEX ON UR BITCH" << std::endl;
 
 	system("PAUSE");
 
